@@ -44,8 +44,6 @@ public:
 	void LoadAnim(string fileName);
 
 
-
-private:
 	// 각 이미지 데이터셋
 	struct DataSet
 	{
@@ -77,6 +75,7 @@ private:
 		//}
 	};
 
+private:
 	// 시간별 데이터를 담고 있는 이미지파트 1개
 	struct Part
 	{
@@ -99,11 +98,11 @@ private:
 		{
 			for (int i = 0; i < partNum; i++)
 				SafeDelete(parts[i]);
-			for (int i = 0; i < flagS.size(); i++)
+			for (UINT i = 0; i < flagS.size(); i++)
 				SafeDelete(flagS[i].second);
-			for (int i = 0; i < flagR.size(); i++)
+			for (UINT i = 0; i < flagR.size(); i++)
 				SafeDelete(flagR[i].second);
-			for (int i = 0; i < flagT.size(); i++)
+			for (UINT i = 0; i < flagT.size(); i++)
 				SafeDelete(flagT[i].second);
 
 			parts.clear();

@@ -28,7 +28,7 @@ public:
 
 	void Rotation(float z);
 	void Rotation(Vector3& vec);
-	Vector2 Rotation() { return rotation; }
+	Vector3 Rotation() { return rotation; }
 
 	void Pass(int val) { pass = val; }
 
