@@ -367,8 +367,9 @@ void S00_AnimCustom::Stretch()
 	Vector2 nonRot = Vector2(Mouse->Position().x - mouseLog.x, mouseLog.y - Mouse->Position().y);
 	nonRot *= 0.01f;
 	Vector2 temp;
-	temp.x = cosf(parts[partSelect]->Rotation().z) * nonRot.x + sinf(parts[partSelect]->Rotation().z) * nonRot.y;
-	temp.y = cosf(parts[partSelect]->Rotation().z) * nonRot.y - sinf(parts[partSelect]->Rotation().z) * nonRot.x;
+	float angle = parts[partSelect]->Rotation().z - dataSelect->D;
+	temp.x = cosf(angle) * nonRot.x + sinf(angle) * nonRot.y;
+	temp.y = cosf(angle) * nonRot.y - sinf(angle) * nonRot.x;
 	temp.x += parts[partSelect]->Scale().x;
 	temp.y += parts[partSelect]->Scale().y;
 
