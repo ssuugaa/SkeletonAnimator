@@ -17,6 +17,8 @@ public:
 	void InputState();
 
 	void UpdateWorld(DataSet * set, Sprite* sprite);
+	void UpdateSprite();
+
 	void SetDirection();
 	void Move();
 	void Stretch();
@@ -34,6 +36,9 @@ public:
 	void RenderTree(DataSet * set, int depth);
 	void CreateAnim();
 
+	void Play();
+	void Pause();
+
 	bool CheckChild(int index, int target);
 	void ChangeParent(int target);
 
@@ -42,7 +47,6 @@ public:
 
 	void SaveAnim(string fileName);
 	void LoadAnim(string fileName);
-
 
 	// 각 이미지 데이터셋
 	struct DataSet
@@ -88,6 +92,7 @@ private:
 		vector<pair<float, Vector2>> dataS;	// 시간에 따른 데이터 <시간, 스케일>
 		vector<pair<float, Vector3>> dataR;	// 시간에 따른 데이터 <시간, 로테이트>
 		vector<pair<float, Vector2>> dataT;	// 시간에 따른 데이터 <시간, 포지션>
+		vector<pair<float, bool>> dataH;	// 시간에 따른 데이터 <시간, 포지션>
 	};
 
 	// 이미지파트들을 담고 있는 애니메이션 1개
@@ -149,10 +154,12 @@ private:
 	DataSet* dataSelect;		// 현재 선택된 이미지의 데이터
 	int animSelect;				// 현재 선택된 애니메이션
 	float timeSelect;			// 현재 선택된 시간
+	float timePlay;				// 재생시간
+	bool isPlay;				// 재생중인지
 
 	// 로드 보조변수
 	char buf[20];				// 스트링 데이터 로드를 위한 버퍼
-
+	
 	// Data.txt
 	int partNum;				// 이미지 갯수
 	vector<Sprite*> parts;		// 실제 이미지

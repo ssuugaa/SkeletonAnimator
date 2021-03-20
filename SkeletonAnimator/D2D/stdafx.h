@@ -10,6 +10,7 @@
 #include <bitset>	// bool 타입만 다루는 배열
 #include <map>
 #include <functional>
+#include <algorithm>
 #include <mutex>
 using namespace std;
 

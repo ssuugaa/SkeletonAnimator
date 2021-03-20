@@ -39,11 +39,11 @@
     <ClCompile Include="Viewer\RenderTarget.cpp">
       <Filter>Viewer</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\S00_AnimCustom.cpp">
-      <Filter>Scenes\00_SkeletonAnimator</Filter>
-    </ClCompile>
     <ClCompile Include="Systems\Mouse.cpp">
       <Filter>Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Scenes\S00_AnimCustom.cpp">
+      <Filter>Scenes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,11 +87,11 @@
     <ClInclude Include="Viewer\RenderTarget.h">
       <Filter>Viewer</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\S00_AnimCustom.h">
-      <Filter>Scenes\00_SkeletonAnimator</Filter>
-    </ClInclude>
     <ClInclude Include="Systems\Mouse.h">
       <Filter>Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenes\S00_AnimCustom.h">
+      <Filter>Scenes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -115,9 +115,6 @@
     </Filter>
     <Filter Include="Scenes">
       <UniqueIdentifier>{523767c8-184d-4ac4-aa2a-8cc87c036edb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scenes\00_SkeletonAnimator">
-      <UniqueIdentifier>{bbaa9fbd-6f33-48c0-a784-bafe2e524536}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

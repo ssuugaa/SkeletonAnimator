@@ -55,7 +55,7 @@ void InitWindow(HINSTANCE hInstance, int nCmdShow)
 			NULL,
 			Title.c_str(),
 			Title.c_str(),
-			WS_EX_TOPMOST | WS_POPUP | WS_OVERLAPPEDWINDOW,
+			WS_EX_TOPMOST | WS_POPUP, // | WS_OVERLAPPEDWINDOW,
 			0,
 			0,
 			Width,
