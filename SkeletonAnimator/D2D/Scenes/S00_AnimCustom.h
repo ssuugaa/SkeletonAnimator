@@ -23,6 +23,7 @@ public:
 	void Move();
 	void Stretch();
 	void Rotate();
+	void Alpha(float& alpha);
 
 	void TimeShift();
 	void TimeMaxShift();
@@ -56,9 +57,9 @@ public:
 		Vector2 S;			// 스케일
 		Vector3 R;			// 로테이트
 		Vector2 T;			// 포지션
-
-		bool isHide;		// 보이는지 여부
+		float alpha;		// 보이는지 여부
 		int parent;			// 부모 이미지
+
 		vector<int> child;	// 자식 이미지
 
 		//DataSet operator * (float& data)	// 곱셈
@@ -92,7 +93,7 @@ private:
 		vector<pair<float, Vector2>> dataS;	// 시간에 따른 데이터 <시간, 스케일>
 		vector<pair<float, Vector3>> dataR;	// 시간에 따른 데이터 <시간, 로테이트>
 		vector<pair<float, Vector2>> dataT;	// 시간에 따른 데이터 <시간, 포지션>
-		vector<pair<float, bool>> dataH;	// 시간에 따른 데이터 <시간, 포지션>
+		vector<pair<float, float>>	 dataA;	// 시간에 따른 데이터 <시간, 알파>
 	};
 
 	// 이미지파트들을 담고 있는 애니메이션 1개
@@ -109,11 +110,14 @@ private:
 				SafeDelete(flagR[i].second);
 			for (UINT i = 0; i < flagT.size(); i++)
 				SafeDelete(flagT[i].second);
+			for (UINT i = 0; i < flagA.size(); i++)
+				SafeDelete(flagA[i].second);
 
 			parts.clear();
 			flagS.clear();
 			flagR.clear();
 			flagT.clear();
+			flagA.clear();
 		}
 
 		// 제어변수
@@ -130,6 +134,7 @@ private:
 		vector<pair<int, Sprite*>> flagS;	// 타임 플래그 <파츠 번호, 스케일>
 		vector<pair<int, Sprite*>> flagR;	// 타임 플래그 <파츠 번호, 로테이트>
 		vector<pair<int, Sprite*>> flagT;	// 타임 플래그 <파츠 번호, 포지션>
+		vector<pair<int, Sprite*>> flagA;	// 타임 플래그 <파츠 번호, 포지션>
 	};
 
 
@@ -141,6 +146,7 @@ private:
 	wstring fileS;				// 파일 이름 (스케일)
 	wstring fileR;				// 파일 이름 (로테이트)
 	wstring fileT;				// 파일 이름 (포지션)
+	wstring fileA;				// 파일 이름 (포지션)
 
 	// 조작계 변수
 	Matrix fixedView;			// 고정 카메라

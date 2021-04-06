@@ -49,8 +49,7 @@ public:
 
 	void UpdateWorld();
 	
-	void IsHide(bool val) { isHide = val; }
-	bool IsHide() { return isHide; }
+	void Alpha(float alpha);
 
 private:
 	void Initialize(wstring textureFile, wstring shaderFile, float startX, float startY, float endX, float endY);
@@ -83,13 +82,12 @@ private:
 	ID3DX11EffectMatrixVariable* sWorld;
 	ID3DX11EffectMatrixVariable* sView;
 	ID3DX11EffectMatrixVariable* sProjection;
+	ID3DX11EffectScalarVariable* sAlpha;
 
 	Vector2 textureSize;
 
 	wstring textureFile;
 	ID3D11ShaderResourceView* srv;
-
-	bool isHide;
 };
 
 // 모션 여러개를 생성하고 필요없는 모션을 지울때

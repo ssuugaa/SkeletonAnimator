@@ -1,8 +1,13 @@
 #include "00_Global.fx"
 
+float Alpha;
+
 float4 PS(VertexOutput input) : SV_TARGET0
 {
-    return DiffuseMap.Sample(PointSampler, input.Uv);
+	float4 color = DiffuseMap.Sample(PointSampler, input.Uv);
+	color.a *= Alpha;
+
+	return color;
 }
 
 technique11 T0

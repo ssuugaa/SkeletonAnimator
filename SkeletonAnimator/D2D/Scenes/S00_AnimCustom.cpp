@@ -38,6 +38,7 @@ S00_AnimCustom::S00_AnimCustom(SceneValues * values)
 	fileS = L"../SkeletonAnimator/UI/Scale.png";
 	fileR = L"../SkeletonAnimator/UI/Rotate.png";
 	fileT = L"../SkeletonAnimator/UI/Position.png";
+	fileA = L"../SkeletonAnimator/UI/Alpha.png";
 	
 	tableBackground = new Sprite(L"../SkeletonAnimator/UI/tableBackground.png", shader);
 	tableBackground->Position(0,  150 - Height * 0.5f);
@@ -51,7 +52,7 @@ S00_AnimCustom::S00_AnimCustom(SceneValues * values)
 	for (int i = 0; i < 2; i++)
 		timeHLines.push_back(new Line(Vector2(-1000, 300 - i * 20 - Height * 0.5f), Vector2(1000, 300 - i * 20 - Height * 0.5f)));
 
-	for (int i = 2; i < 2 + 3; i++)
+	for (int i = 2; i < 2 + 4; i++)
 		timeHLines.push_back(new Line(Vector2(-1000, 300 - i * 30 - Height * 0.5f), Vector2(1000, 300 - i * 30 - Height * 0.5f)));
 
 	for (int i = 0; i <= 90; i++)
@@ -111,6 +112,8 @@ S00_AnimCustom::S00_AnimCustom(SceneValues * values)
 			anims[i]->flagR[j].second->Update(fixedView, fixedProj);
 		for (UINT j = 0; j < anims[i]->flagT.size(); j++)
 			anims[i]->flagT[j].second->Update(fixedView, fixedProj);
+		for (UINT j = 0; j < anims[i]->flagA.size(); j++)
+			anims[i]->flagA[j].second->Update(fixedView, fixedProj);
 	}
 }
 
@@ -304,14 +307,15 @@ void S00_AnimCustom::UpdateWorld(DataSet * set, Sprite * sprite)
 void S00_AnimCustom::UpdateSprite()
 {
 	// SRT
-	int s, r, t, h;
+	int s, r, t, a;
 	Vector2 vs = { 1, 1 };
 	Vector3 vr = { 0, 0, 0 };
 	Vector2 vt = { 0, 0 };
+	float alpha = 0;
 
 	for (UINT p = 0; p < partDatas.size(); p++)
 	{
-		s = 0, r = 0, t = 0, h = -1;
+		s = 0, r = 0, t = 0, a = 0;
 
 		// T 선형보간
 		for (UINT i = 0; i < anims[animSelect]->parts[p]->dataT.size(); i++)
@@ -379,12 +383,31 @@ void S00_AnimCustom::UpdateSprite()
 				+ anims[animSelect]->parts[p]->dataS[s].second * delta;
 		}
 
-		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataH.size(); i++)
-			if (timeSelect + 1e-3f > anims[animSelect]->parts[partSelect]->dataH[i].first)
-				h++;
+		// A 선형보간
+		for (UINT i = 0; i < anims[animSelect]->parts[p]->dataA.size(); i++)
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[p]->dataA[i].first)
+				a++;
+
+		if (a == anims[animSelect]->parts[p]->dataA.size())
+		{
+			alpha = anims[animSelect]->parts[p]->dataA[a - 1].second;
+		}
+		else if (timeSelect - 1e-3f < anims[animSelect]->parts[p]->dataA[a].first
+			&& anims[animSelect]->parts[p]->dataA[a].first < timeSelect + 1e-3f)
+		{
+			alpha = anims[animSelect]->parts[p]->dataA[a].second;
+		}
+		else
+		{
+			float delta = anims[animSelect]->parts[p]->dataA[a].first - anims[animSelect]->parts[p]->dataA[a - 1].first;
+			delta = (timeSelect - anims[animSelect]->parts[p]->dataA[a - 1].first) / delta;
+
+			alpha = anims[animSelect]->parts[p]->dataA[a - 1].second * (1 - delta)
+				+ anims[animSelect]->parts[p]->dataA[a].second * delta;
+		}
 
 		// 적용
-		parts[p]->IsHide(anims[animSelect]->parts[p]->dataH[h].second);
+		parts[p]->Alpha(alpha);
 		parts[p]->World(vs, vr, vt);
 	}
 	UpdateWorld(partDatas[0], parts[0]);
@@ -405,29 +428,6 @@ void S00_AnimCustom::SetDirection()
 		direction->Rotation(-dataSelect->D);
 		parts[partSelect]->Direction(dataSelect->D);
 	}
-	//else if (animNum > 0)
-	//{
-	//	bool New = true;
-	//	vector<pair<float, Vector3>>::iterator index = anims[animSelect]->parts[partSelect]->dataR.begin();
-	//	//int index = 0;
-	//	for (int i = 0; i < anims[animSelect]->parts[partSelect]->dataR.size(); i++)
-	//	{
-	//		if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataR[i].first) index++;
-	//
-	//		if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataR[i].first
-	//			&& anims[animSelect]->parts[partSelect]->dataR[i].first < timeSelect + 1e-3f)
-	//		{
-	//			anims[animSelect]->parts[partSelect]->dataR[i].second = temp;
-	//			New = false;
-	//			break;
-	//		}
-	//	}
-	//	if (New)
-	//	{
-	//		anims[animSelect]->parts[partSelect]->dataR.insert(index, pair<float, Vector3>(timeSelect, temp));
-	//		anims[animSelect]->flagR.push_back(pair<int, Sprite*>(partSelect, new Sprite(fileR, shader, Vector2(timeLineSelect->Position().x - Width * 0.5f, 300 - 120 - Height * 0.5f), Vector2(0.25f, 0.25f))));
-	//	}
-	//}
 }
 void S00_AnimCustom::Move()
 {
@@ -447,10 +447,14 @@ void S00_AnimCustom::Move()
 		vector<pair<float, Vector2>>::iterator index = anims[animSelect]->parts[partSelect]->dataT.begin();
 		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagT.begin();
 		//int index = 0;
+		while (partSelect != indexSprite->first) indexSprite++;
 		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataT.size(); i++)
 		{
-			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataT[i].first) { index++; indexSprite++; }
-
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataT[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
 			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataT[i].first
 				&& anims[animSelect]->parts[partSelect]->dataT[i].first < timeSelect + 1e-3f)
 			{
@@ -494,9 +498,14 @@ void S00_AnimCustom::Stretch()
 		vector<pair<float, Vector2>>::iterator index = anims[animSelect]->parts[partSelect]->dataS.begin();
 		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagS.begin();
 		//int index = 0;
+		while (partSelect != indexSprite->first) indexSprite++;
 		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataS.size(); i++)
 		{
-			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataS[i].first) { index++; indexSprite++; }
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataS[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
 
 			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataS[i].first
 				&& anims[animSelect]->parts[partSelect]->dataS[i].first < timeSelect + 1e-3f)
@@ -535,9 +544,14 @@ void S00_AnimCustom::Rotate()
 		vector<pair<float, Vector3>>::iterator index = anims[animSelect]->parts[partSelect]->dataR.begin();
 		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagR.begin();
 		//int index = 0;
+		while (partSelect != indexSprite->first) indexSprite++;
 		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataR.size(); i++)
 		{
-			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataR[i].first) { index++; indexSprite++; }
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataR[i].first) 
+			{
+				index++;
+				indexSprite++;
+			}
 
 			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataR[i].first
 				&& anims[animSelect]->parts[partSelect]->dataR[i].first < timeSelect + 1e-3f)
@@ -557,6 +571,30 @@ void S00_AnimCustom::Rotate()
 		}
 
 	}
+}
+void S00_AnimCustom::Alpha(float& alpha)
+{
+	vector<pair<float, float>>::iterator index = anims[animSelect]->parts[partSelect]->dataA.begin();
+	vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagA.begin();
+
+	while (partSelect != indexSprite->first) indexSprite++;
+	for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataA.size(); i++)
+	{
+		if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataA[i].first)
+		{
+			index++;
+			indexSprite++;
+		}
+		if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataA[i].first
+			&& anims[animSelect]->parts[partSelect]->dataA[i].first < timeSelect + 1e-3f)
+			break;
+	}
+
+	anims[animSelect]->parts[partSelect]->dataA.insert(index, pair<float, float>{ timeSelect, alpha });
+	anims[animSelect]->flagA.insert(indexSprite, pair<int, Sprite*>(partSelect, new Sprite(fileA, shader, Vector2(timeLineSelect->Position().x - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
+
+	for (UINT i = 0; i < anims[animSelect]->flagA.size(); i++)
+		anims[animSelect]->flagA[i].second->Update(fixedView, fixedProj);
 }
 
 void S00_AnimCustom::TimeShift()
@@ -579,6 +617,196 @@ void S00_AnimCustom::TimeMaxShift()
 }
 void S00_AnimCustom::DeleteFlag()
 {
+	// x - 5 x 현재 시간 ㅇ -> 인덱스화
+	// y - 15 -> 인덱스화
+
+	if (Mouse->Position().y < (float)(Height - 300 + 45) || (float)(Height - 300 + 165) < Mouse->Position().y)
+	{
+		state = STATE::disable;
+		return;
+	}
+
+	float AxisY = Mouse->Position().y;
+	AxisY -= (float)(Height - 300 + 45); //(0 ~ 120)
+	int kind = (int)AxisY / 30;			 // T S R A
+
+	if (kind == 0)
+	{
+		if (anims[animSelect]->parts[partSelect]->dataT.size() == 1)
+		{
+			state = STATE::disable;
+			return;
+		}
+		vector<pair<float, Vector2>>::iterator index = anims[animSelect]->parts[partSelect]->dataT.begin();
+		vector<pair<float, Vector2>>::iterator end = anims[animSelect]->parts[partSelect]->dataT.end();
+		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagT.begin();
+
+		while (partSelect != indexSprite->first) indexSprite++;
+
+		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataT.size(); i++)
+		{
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataT[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
+			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataT[i].first
+				&& anims[animSelect]->parts[partSelect]->dataT[i].first < timeSelect + 1e-3f)
+				break;
+		}
+
+		if (index >= end)
+		{
+			state = STATE::disable;
+			return;
+		}
+		if (timeSelect - 1e-3f > index->first || index->first > timeSelect + 1e-3f)
+		{
+			state = STATE::disable;
+			return;
+		}
+
+		anims[animSelect]->parts[partSelect]->dataT.erase(index);
+
+		SafeDelete(indexSprite->second);
+		anims[animSelect]->flagT.erase(indexSprite);
+		for (UINT j = 0; j < anims[animSelect]->flagT.size(); j++)
+			anims[animSelect]->flagT[j].second->Update(fixedView, fixedProj);
+	}
+	else if (kind == 1)
+	{
+		if (anims[animSelect]->parts[partSelect]->dataS.size() == 1)
+		{
+			state = STATE::disable;
+			return;
+		}
+		vector<pair<float, Vector2>>::iterator index = anims[animSelect]->parts[partSelect]->dataS.begin();
+		vector<pair<float, Vector2>>::iterator end = anims[animSelect]->parts[partSelect]->dataS.end();
+		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagS.begin();
+
+		while (partSelect != indexSprite->first) indexSprite++;
+		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataS.size(); i++)
+		{
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataS[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
+			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataS[i].first
+				&& anims[animSelect]->parts[partSelect]->dataS[i].first < timeSelect + 1e-3f)
+				break;
+		}
+
+		if (index >= end)
+		{
+			state = STATE::disable;
+			return;
+		}
+		if (timeSelect - 1e-3f > index->first || index->first > timeSelect + 1e-3f)
+		{
+			state = STATE::disable;
+			return;
+		}
+
+		anims[animSelect]->parts[partSelect]->dataS.erase(index);
+
+		SafeDelete(indexSprite->second);
+		anims[animSelect]->flagS.erase(indexSprite);
+		for (UINT j = 0; j < anims[animSelect]->flagS.size(); j++)
+			anims[animSelect]->flagS[j].second->Update(fixedView, fixedProj);
+	}
+	else if (kind == 2)
+	{
+		if (anims[animSelect]->parts[partSelect]->dataR.size() == 1)
+		{
+			state = STATE::disable;
+			return;
+		}
+		vector<pair<float, Vector3>>::iterator index = anims[animSelect]->parts[partSelect]->dataR.begin();
+		vector<pair<float, Vector3>>::iterator end = anims[animSelect]->parts[partSelect]->dataR.end();
+		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagR.begin();
+
+		while (partSelect != indexSprite->first) indexSprite++;
+		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataR.size(); i++)
+		{
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataR[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
+			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataR[i].first
+				&& anims[animSelect]->parts[partSelect]->dataR[i].first < timeSelect + 1e-3f)
+				break;
+		}
+
+		if (index >= end)
+		{
+			state = STATE::disable;
+			return;
+		}
+		if (timeSelect - 1e-3f > index->first || index->first > timeSelect + 1e-3f)
+		{
+			state = STATE::disable;
+			return;
+		}
+
+		anims[animSelect]->parts[partSelect]->dataR.erase(index);
+
+		SafeDelete(indexSprite->second);
+		anims[animSelect]->flagR.erase(indexSprite);
+		for (UINT j = 0; j < anims[animSelect]->flagR.size(); j++)
+			anims[animSelect]->flagR[j].second->Update(fixedView, fixedProj);
+	}
+	else if (kind == 3)
+	{
+		if (anims[animSelect]->parts[partSelect]->dataA.size() == 1)
+		{
+			state = STATE::disable;
+				return;
+		}
+
+		vector<pair<float, float>>::iterator index = anims[animSelect]->parts[partSelect]->dataA.begin();
+		vector<pair<float, float>>::iterator end = anims[animSelect]->parts[partSelect]->dataA.end();
+		vector<pair<int, Sprite*>>::iterator indexSprite = anims[animSelect]->flagA.begin();
+
+		while (partSelect != indexSprite->first) indexSprite++;
+		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataA.size(); i++)
+		{
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataA[i].first)
+			{
+				index++;
+				indexSprite++;
+			}
+			if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataA[i].first
+				&& anims[animSelect]->parts[partSelect]->dataA[i].first < timeSelect + 1e-3f)
+				break;
+		}
+
+		if (index >= end)
+		{
+			state = STATE::disable;
+			return;
+		}
+		if (timeSelect - 1e-3f > index->first || index->first > timeSelect + 1e-3f)
+		{
+			state = STATE::disable;
+			return;
+		}
+
+		anims[animSelect]->parts[partSelect]->dataA.erase(index);
+
+		SafeDelete(indexSprite->second);
+		anims[animSelect]->flagA.erase(indexSprite);
+		for (UINT j = 0; j < anims[animSelect]->flagA.size(); j++)
+			anims[animSelect]->flagA[j].second->Update(fixedView, fixedProj);
+	}
+
+	state = STATE::disable;
+	return;
+
+	/*
+	구버전
+	
 	float AxisX = Math::Clamp(Mouse->Position().x, 120.0f, 1920.0f);
 	AxisX -= 100;
 	AxisX = floorf(AxisX  * 0.05f) * 0.05f;
@@ -602,7 +830,7 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<float, Vector2>>::iterator indexT = anims[animSelect]->parts[partSelect]->dataT.begin();
 		for (indexT; indexT != anims[animSelect]->parts[partSelect]->dataT.end(); indexT++)
 		{
-			if (AxisX - 1e-3f < (*indexT).first && (*indexT).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexT->first && indexT->first < AxisX + 1e-3f)
 			{
 				anims[animSelect]->parts[partSelect]->dataT.erase(indexT);
 				break;
@@ -612,11 +840,11 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<int, Sprite*>>::iterator index = anims[animSelect]->flagT.begin();
 		for (index; index != anims[animSelect]->flagT.end(); index++)
 		{
-			if ((*index).first == partSelect)
+			if (index->first == partSelect)
 			{
 				if (count == countT)
 				{
-					SafeDelete((*index).second);
+					SafeDelete(index->second);
 					anims[animSelect]->flagT.erase(index);
 					break;
 				}
@@ -632,7 +860,7 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<float, Vector2>>::iterator indexS = anims[animSelect]->parts[partSelect]->dataS.begin();
 		for (indexS; indexS != anims[animSelect]->parts[partSelect]->dataS.end(); indexS++)
 		{
-			if (AxisX - 1e-3f < (*indexS).first && (*indexS).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexS->first && indexS->first < AxisX + 1e-3f)
 			{
 				anims[animSelect]->parts[partSelect]->dataS.erase(indexS);
 				break;
@@ -642,11 +870,11 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<int, Sprite*>>::iterator index = anims[animSelect]->flagS.begin();
 		for (index; index != anims[animSelect]->flagS.end(); index++)
 		{
-			if ((*index).first == partSelect)
+			if (index->first == partSelect)
 			{
 				if (count == countS)
 				{
-					SafeDelete((*index).second);
+					SafeDelete(index->second);
 					anims[animSelect]->flagS.erase(index);
 					break;
 				}
@@ -662,7 +890,7 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<float, Vector3>>::iterator indexR = anims[animSelect]->parts[partSelect]->dataR.begin();
 		for (indexR; indexR != anims[animSelect]->parts[partSelect]->dataR.end(); indexR++)
 		{
-			if (AxisX - 1e-3f < (*indexR).first && (*indexR).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexR->first && indexR->first < AxisX + 1e-3f)
 			{
 				anims[animSelect]->parts[partSelect]->dataR.erase(indexR);
 				break;
@@ -672,11 +900,11 @@ void S00_AnimCustom::DeleteFlag()
 		vector<pair<int, Sprite*>>::iterator index = anims[animSelect]->flagR.begin();
 		for (index; index != anims[animSelect]->flagR.end(); index++)
 		{
-			if ((*index).first == partSelect)
+			if (index->first == partSelect)
 			{
 				if (count == countR)
 				{
-					SafeDelete((*index).second);
+					SafeDelete(index->second);
 					anims[animSelect]->flagR.erase(index);
 					break;
 				}
@@ -693,10 +921,13 @@ void S00_AnimCustom::DeleteFlag()
 			anims[i]->flagR[j].second->Update(fixedView, fixedProj);
 		for (UINT j = 0; j < anims[i]->flagT.size(); j++)
 			anims[i]->flagT[j].second->Update(fixedView, fixedProj);
+		for (UINT j = 0; j < anims[i]->flagA.size(); j++)
+			anims[i]->flagA[j].second->Update(fixedView, fixedProj);
 	}
 
 	state = STATE::disable;
 	return;
+	*/
 }
 void S00_AnimCustom::Reset()
 {
@@ -720,9 +951,9 @@ void S00_AnimCustom::Reset()
 		vector<pair<float, Vector2>>::iterator indexT = anims[animSelect]->parts[partSelect]->dataT.begin();
 		for (indexT; indexT != anims[animSelect]->parts[partSelect]->dataT.end(); indexT++)
 		{
-			if (AxisX - 1e-3f < (*indexT).first && (*indexT).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexT->first && indexT->first < AxisX + 1e-3f)
 			{
-				(*indexT).second = partDatas[partSelect]->T;
+				indexT->second = partDatas[partSelect]->T;
 				break;
 			}
 		}
@@ -732,9 +963,9 @@ void S00_AnimCustom::Reset()
 		vector<pair<float, Vector2>>::iterator indexS = anims[animSelect]->parts[partSelect]->dataS.begin();
 		for (indexS; indexS != anims[animSelect]->parts[partSelect]->dataS.end(); indexS++)
 		{
-			if (AxisX - 1e-3f < (*indexS).first && (*indexS).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexS->first && indexS->first < AxisX + 1e-3f)
 			{
-				(*indexS).second = partDatas[partSelect]->S;
+				indexS->second = partDatas[partSelect]->S;
 				break;
 			}
 		}
@@ -744,9 +975,9 @@ void S00_AnimCustom::Reset()
 		vector<pair<float, Vector3>>::iterator indexR = anims[animSelect]->parts[partSelect]->dataR.begin();
 		for (indexR; indexR != anims[animSelect]->parts[partSelect]->dataR.end(); indexR++)
 		{
-			if (AxisX - 1e-3f < (*indexR).first && (*indexR).first < AxisX + 1e-3f)
+			if (AxisX - 1e-3f < indexR->first && indexR->first < AxisX + 1e-3f)
 			{
-				(*indexR).second = partDatas[partSelect]->R;
+				indexR->second = partDatas[partSelect]->R;
 				break;
 			}
 		}
@@ -810,10 +1041,12 @@ void S00_AnimCustom::PhaseData()
 	ImGui::InputFloat3("Rotate", dataSelect->R);
 
 	int parent = dataSelect->parent;
-	ImGui::Checkbox("IsHide", &dataSelect->isHide);
+	float alpha = dataSelect->alpha;
+	ImGui::SliderFloat("Alpha", &dataSelect->alpha, 0.0f, 1.0f);
+	if (alpha != dataSelect->alpha) parts[partSelect]->Alpha(dataSelect->alpha);
 	ImGui::SliderInt("Parent", &parent, 0, partNum - 1);
 
-	parts[partSelect]->IsHide(dataSelect->isHide);
+	parts[partSelect]->Alpha(dataSelect->alpha);
 	if (partSelect != 0 && parent != dataSelect->parent && CheckChild(partSelect, parent)) 
 		ChangeParent(parent);
 
@@ -848,6 +1081,8 @@ void S00_AnimCustom::PhaseAnim()
 				anims[i]->flagR[j].second->Update(fixedView, fixedProj);
 			for (UINT j = 0; j < anims[i]->flagT.size(); j++)
 				anims[i]->flagT[j].second->Update(fixedView, fixedProj);
+			for (UINT j = 0; j < anims[i]->flagA.size(); j++)
+				anims[i]->flagA[j].second->Update(fixedView, fixedProj);
 		}
 	}
 
@@ -892,11 +1127,12 @@ void S00_AnimCustom::PhaseAnim()
 		ImGui::Text("Time Max : %f", anims[animSelect]->timeMax);
 		ImGui::Text("Time Select : %f", timeSelect);
 		
-		// SRT
-		int s = 0, r = 0, t = 0, h = -1;
+		// SRTA
+		int s = 0, r = 0, t = 0, a = 0;
 		Vector2 vs = {1, 1};
 		Vector3 vr = {0, 0, 0};
 		Vector2 vt = {0, 0};
+		float alpha = 0;
 
 		// T 선형보간
 		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataT.size(); i++)
@@ -973,24 +1209,40 @@ void S00_AnimCustom::PhaseAnim()
 			ImGui::LabelText("Scale", "%f\t%f", vs.x, vs.y);
 		}
 
-		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataH.size(); i++)
-			if (timeSelect + 1e-3f > anims[animSelect]->parts[partSelect]->dataH[i].first)
-				h++;
-
-		if(timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataH[h].first
-			&& anims[animSelect]->parts[partSelect]->dataH[h].first < timeSelect + 1e-3f)
-				ImGui::Checkbox("IsHide", &anims[animSelect]->parts[partSelect]->dataH[h].second);
-		else if (ImGui::Button("IsHide"))
+		// Alpha 선형보간
+		for (UINT i = 0; i < anims[animSelect]->parts[partSelect]->dataA.size(); i++)
+			if (timeSelect - 1e-3f > anims[animSelect]->parts[partSelect]->dataA[i].first)
+				a++;
+		if (a == anims[animSelect]->parts[partSelect]->dataA.size())
 		{
-			anims[animSelect]->parts[partSelect]->dataH.push_back(pair<float, bool>{ timeSelect, false });
+			alpha = anims[animSelect]->parts[partSelect]->dataA[a - 1].second;
+			ImGui::LabelText("Alpha", "%f", alpha);
+			ImGui::SameLine();
+			if (ImGui::Button("AlphaFlag")) Alpha(alpha);
 		}
+		else if (timeSelect - 1e-3f < anims[animSelect]->parts[partSelect]->dataA[a].first
+			&& anims[animSelect]->parts[partSelect]->dataA[a].first < timeSelect + 1e-3f)
+		{
+			ImGui::SliderFloat("Alpha", &anims[animSelect]->parts[partSelect]->dataA[a].second, 0.0f, 1.0f);
+			alpha = anims[animSelect]->parts[partSelect]->dataA[a].second;
+		}
+		else
+		{
+			float delta = anims[animSelect]->parts[partSelect]->dataA[a].first - anims[animSelect]->parts[partSelect]->dataA[a - 1].first;
+			delta = (timeSelect - anims[animSelect]->parts[partSelect]->dataA[a - 1].first) / delta;
 
-		parts[partSelect]->IsHide(anims[animSelect]->parts[partSelect]->dataH[h].second);
+			alpha = anims[animSelect]->parts[partSelect]->dataA[a - 1].second * (1 - delta)
+				+ anims[animSelect]->parts[partSelect]->dataA[a].second * delta;
+			ImGui::LabelText("Alpha", "%f", alpha);
+			ImGui::SameLine();
+			if (ImGui::Button("AlphaFlag")) Alpha(alpha);
+		}
 
 
 
 		// 적용
 		parts[partSelect]->World(vs, vr, vt);
+		parts[partSelect]->Alpha(alpha);
 		UpdateWorld(partDatas[partSelect], parts[partSelect]);
 
 		// 타임테이블 배경 & 라인
@@ -1035,9 +1287,11 @@ void S00_AnimCustom::PhaseAnim()
 		for (UINT i = 0; i < anims[animSelect]->flagS.size(); i++)
 			if (anims[animSelect]->flagS[i].first == partSelect) anims[animSelect]->flagS[i].second->Render();
 		for (UINT i = 0; i < anims[animSelect]->flagR.size(); i++)
-			if(anims[animSelect]->flagR[i].first == partSelect) anims[animSelect]->flagR[i].second->Render();
+			if (anims[animSelect]->flagR[i].first == partSelect) anims[animSelect]->flagR[i].second->Render();
 		for (UINT i = 0; i < anims[animSelect]->flagT.size(); i++)
-			if(anims[animSelect]->flagT[i].first == partSelect) anims[animSelect]->flagT[i].second->Render();
+			if (anims[animSelect]->flagT[i].first == partSelect) anims[animSelect]->flagT[i].second->Render();
+		for (UINT i = 0; i < anims[animSelect]->flagA.size(); i++)
+			if (anims[animSelect]->flagA[i].first == partSelect) anims[animSelect]->flagA[i].second->Render();
 	}
 
 	else
@@ -1074,16 +1328,18 @@ void S00_AnimCustom::CreateAnim()
 		anims[i]->parts[k]->dataS.push_back(pair<float, Vector2>(0.0f, partDatas[k]->S));
 		anims[i]->parts[k]->dataR.push_back(pair<float, Vector3>(0.0f, partDatas[k]->R));
 		anims[i]->parts[k]->dataT.push_back(pair<float, Vector2>(0.0f, partDatas[k]->T));
-		anims[i]->parts[k]->dataH.push_back(pair<float, bool>(0.0f, partDatas[k]->isHide));
+		anims[i]->parts[k]->dataA.push_back(pair<float, float>(0.0f, partDatas[k]->alpha));
 
 		anims[i]->flagS.push_back(pair<int, Sprite*>(k, new Sprite(fileS, shader, Vector2(110 - FixWidth * 0.5f, 300 - 90 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 		anims[i]->flagR.push_back(pair<int, Sprite*>(k, new Sprite(fileR, shader, Vector2(110 - FixWidth * 0.5f, 300 - 120 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 		anims[i]->flagT.push_back(pair<int, Sprite*>(k, new Sprite(fileT, shader, Vector2(110 - FixWidth * 0.5f, 300 - 60 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
+		anims[i]->flagA.push_back(pair<int, Sprite*>(k, new Sprite(fileA, shader, Vector2(110 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 	}
 
 	anims[i]->flagS[0].second->Update(fixedView, fixedProj);
 	anims[i]->flagR[0].second->Update(fixedView, fixedProj);
 	anims[i]->flagT[0].second->Update(fixedView, fixedProj);
+	anims[i]->flagA[0].second->Update(fixedView, fixedProj);
 
 	animSelect = i;
 	anims[i]->timeMax = 1.0f;
@@ -1103,14 +1359,15 @@ void S00_AnimCustom::Play()
 	timeLineSelect->Update(fixedView, fixedProj);
 
 	// SRT
-	int s, r, t;
+	int s, r, t, a;
 	Vector2 vs = { 1, 1 };
 	Vector3 vr = { 0, 0, 0 };
 	Vector2 vt = { 0, 0 };
+	float alpha = 0;
 
 	for (UINT p = 0; p < partDatas.size(); p++)
 	{
-		s = 0, r = 0, t = 0;
+		s = 0, r = 0, t = 0, a = 0;
 
 		// T 선형보간
 		for (UINT i = 0; i < anims[animSelect]->parts[p]->dataT.size(); i++)
@@ -1177,8 +1434,32 @@ void S00_AnimCustom::Play()
 			vs = anims[animSelect]->parts[p]->dataS[s - 1].second * (1 - delta)
 				+ anims[animSelect]->parts[p]->dataS[s].second * delta;
 		}
+
+		// A 선형보간
+		for (UINT i = 0; i < anims[animSelect]->parts[p]->dataA.size(); i++)
+			if (timePlay - 1e-3f > anims[animSelect]->parts[p]->dataA[i].first)
+				a++;
+		if (a == anims[animSelect]->parts[p]->dataA.size())
+		{
+			alpha = anims[animSelect]->parts[p]->dataA[a - 1].second;
+		}
+		else if (timePlay - 1e-3f < anims[animSelect]->parts[p]->dataA[a].first
+			&& anims[animSelect]->parts[p]->dataA[a].first < timePlay + 1e-3f)
+		{
+			alpha = anims[animSelect]->parts[p]->dataA[a].second;
+		}
+		else
+		{
+			float delta = anims[animSelect]->parts[p]->dataA[a].first - anims[animSelect]->parts[p]->dataA[a - 1].first;
+			delta = (timePlay - anims[animSelect]->parts[p]->dataA[a - 1].first) / delta;
+
+			alpha = anims[animSelect]->parts[p]->dataA[a - 1].second * (1 - delta)
+				+ anims[animSelect]->parts[p]->dataA[a].second * delta;
+		}
+
 		// 적용
 		parts[p]->World(vs, vr, vt);
+		parts[p]->Alpha(alpha);
 	}
 	UpdateWorld(partDatas[0], parts[0]);
 }
@@ -1188,85 +1469,6 @@ void S00_AnimCustom::Pause()
 
 	timeLineSelect->Update(fixedView, fixedProj);
 	UpdateSprite();
-	//// SRT
-	//int s, r, t;
-	//Vector2 vs = { 1, 1 };
-	//Vector3 vr = { 0, 0, 0 };
-	//Vector2 vt = { 0, 0 };
-	//
-	//for (UINT p = 0; p < partDatas.size(); p++)
-	//{
-	//	s = 0, r = 0, t = 0;
-	//
-	//	// T 선형보간
-	//	for (UINT i = 0; i < anims[animSelect]->parts[p]->dataT.size(); i++)
-	//		if (timeSelect - 1e-3f > anims[animSelect]->parts[p]->dataT[i].first)
-	//			t++;
-	//	if (t == anims[animSelect]->parts[p]->dataT.size())
-	//	{
-	//		vt = anims[animSelect]->parts[p]->dataT[t - 1].second;
-	//	}
-	//	else if (timeSelect - 1e-3f < anims[animSelect]->parts[p]->dataT[t].first
-	//		&& anims[animSelect]->parts[p]->dataT[t].first < timeSelect + 1e-3f)
-	//	{
-	//		vt = anims[animSelect]->parts[p]->dataT[t].second;
-	//	}
-	//	else
-	//	{
-	//		float delta = anims[animSelect]->parts[p]->dataT[t].first - anims[animSelect]->parts[p]->dataT[t - 1].first;
-	//		delta = (timeSelect - anims[animSelect]->parts[p]->dataT[t - 1].first) / delta;
-	//
-	//		vt = anims[animSelect]->parts[p]->dataT[t - 1].second * (1 - delta)
-	//			+ anims[animSelect]->parts[p]->dataT[t].second * delta;
-	//	}
-	//
-	//	// R 선형보간
-	//	for (UINT i = 0; i < anims[animSelect]->parts[p]->dataR.size(); i++)
-	//		if (timeSelect - 1e-3f > anims[animSelect]->parts[p]->dataR[i].first)
-	//			r++;
-	//	if (r == anims[animSelect]->parts[p]->dataR.size())
-	//	{
-	//		vr = anims[animSelect]->parts[p]->dataR[r - 1].second;
-	//	}
-	//	else if (timeSelect - 1e-3f < anims[animSelect]->parts[p]->dataR[r].first
-	//		&& anims[animSelect]->parts[p]->dataR[r].first < timeSelect + 1e-3f)
-	//	{
-	//		vr = anims[animSelect]->parts[p]->dataR[r].second;
-	//	}
-	//	else
-	//	{
-	//		float delta = anims[animSelect]->parts[p]->dataR[r].first - anims[animSelect]->parts[p]->dataR[r - 1].first;
-	//		delta = (timeSelect - anims[animSelect]->parts[p]->dataR[r - 1].first) / delta;
-	//
-	//		vr = anims[animSelect]->parts[p]->dataR[r - 1].second * (1 - delta)
-	//			+ anims[animSelect]->parts[p]->dataR[r].second * delta;
-	//	}
-	//
-	//	// S 선형보간
-	//	for (UINT i = 0; i < anims[animSelect]->parts[p]->dataS.size(); i++)
-	//		if (timeSelect - 1e-3f > anims[animSelect]->parts[p]->dataS[i].first)
-	//			s++;
-	//	if (s == anims[animSelect]->parts[p]->dataS.size())
-	//	{
-	//		vs = anims[animSelect]->parts[p]->dataS[s - 1].second;
-	//	}
-	//	else if (timeSelect - 1e-3f < anims[animSelect]->parts[p]->dataS[s].first
-	//		&& anims[animSelect]->parts[p]->dataS[s].first < timeSelect + 1e-3f)
-	//	{
-	//		vs = anims[animSelect]->parts[p]->dataS[s].second;
-	//	}
-	//	else
-	//	{
-	//		float delta = anims[animSelect]->parts[p]->dataS[s].first - anims[animSelect]->parts[p]->dataS[s - 1].first;
-	//		delta = (timeSelect - anims[animSelect]->parts[p]->dataS[s - 1].first) / delta;
-	//
-	//		vs = anims[animSelect]->parts[p]->dataS[s - 1].second * (1 - delta)
-	//			+ anims[animSelect]->parts[p]->dataS[s].second * delta;
-	//	}
-	//	// 적용
-	//	parts[p]->World(vs, vr, vt);
-	//}
-	//UpdateWorld(partDatas[0], parts[0]);
 }
 
 bool S00_AnimCustom::CheckChild(int index, int target)
@@ -1285,12 +1487,13 @@ bool S00_AnimCustom::CheckChild(int index, int target)
 void S00_AnimCustom::ChangeParent(int target)
 {
 	// 원래 부모한테서 자신 제거
-	vector<int>::iterator iter = partDatas[dataSelect->parent]->child.begin();
+	vector<int>::iterator begin = partDatas[dataSelect->parent]->child.begin();
 	vector<int>::iterator end = partDatas[dataSelect->parent]->child.end();
-	
+	vector<int>::iterator iter = begin;
+
 	for (iter; iter != end; iter++)
 	{
-		if(*iter == partSelect)
+		if(iter - begin == partSelect)
 		{
 			partDatas[dataSelect->parent]->child.erase(iter);
 			break;
@@ -1320,7 +1523,7 @@ void S00_AnimCustom::SaveData(string fileName)
 		fprintf_s(file, "R : %f, %f, %f\n", partDatas[i]->R.x, partDatas[i]->R.y, partDatas[i]->R.z);
 		fprintf_s(file, "T : %f, %f\n", partDatas[i]->T.x, partDatas[i]->T.y);
 
-		fprintf_s(file, "H : %d\n", partDatas[i]->isHide);
+		fprintf_s(file, "H : %f\n", partDatas[i]->alpha);
 		fprintf_s(file, "P : %d\n", partDatas[i]->parent);
 	}
 
@@ -1359,13 +1562,13 @@ void S00_AnimCustom::LoadData(string fileName)
 		fscanf_s(file, "R : %f, %f, %f\n", &partDatas[i]->R.x, &partDatas[i]->R.y, &partDatas[i]->R.z);
 		fscanf_s(file, "T : %f, %f\n", &partDatas[i]->T.x, &partDatas[i]->T.y);
 
-		fscanf_s(file, "H : %d\n", (int*)&partDatas[i]->isHide);
+		fscanf_s(file, "H : %f\n", &partDatas[i]->alpha);
 		fscanf_s(file, "P : %d\n", &partDatas[i]->parent);
 		
 		parts.push_back(new Sprite(String::ToWString("Character/" + fileName + "/" + partDatas[i]->name + ".png"), shader));
 		parts[i]->World(partDatas[i]->S, partDatas[i]->R, partDatas[i]->T);
 		parts[i]->Direction(partDatas[i]->D);
-		parts[i]->IsHide(partDatas[i]->isHide);
+		parts[i]->Alpha(partDatas[i]->alpha);
 	}
 
 	// 차일드 데이터 갱신
@@ -1418,11 +1621,11 @@ void S00_AnimCustom::SaveAnim(string fileName)
 				fprintf_s(file, "TK : %f, %f\n", anims[i]->parts[j]->dataT[k].second.x, anims[i]->parts[j]->dataT[k].second.y);
 			}
 			//H
-			fprintf_s(file, "HC : %d\n", anims[i]->parts[j]->dataH.size());
-			for (UINT k = 0; k < anims[i]->parts[j]->dataH.size(); k++)
+			fprintf_s(file, "HC : %d\n", anims[i]->parts[j]->dataA.size());
+			for (UINT k = 0; k < anims[i]->parts[j]->dataA.size(); k++)
 			{
-				fprintf_s(file, "HT : %f\n", anims[i]->parts[j]->dataH[k].first);
-				anims[i]->parts[j]->dataH[k].second ? fprintf_s(file, "HK : %d\n", 1) : fprintf_s(file, "HK : %d\n", 0);
+				fprintf_s(file, "HT : %f\n", anims[i]->parts[j]->dataA[k].first);
+				fprintf_s(file, "HK : %f\n", anims[i]->parts[j]->dataA[k].second);
 			}
 		}
 	}
@@ -1494,11 +1697,11 @@ void S00_AnimCustom::LoadAnim(string fileName)
 			int boolConv = 0;
 			for (int k = 0; k < count; k++)
 			{
-				anims[i]->parts[j]->dataH.push_back(pair<float, Vector2>());
-				fscanf_s(file, "HT : %f\n", &(anims[i]->parts[j]->dataH[k].first));
-				fscanf_s(file, "HK : %d\n", &boolConv);
-				anims[i]->parts[j]->dataH[k].second = boolConv == 0 ? false : true;
-				//anims[i]->parts[j]->dataH[k].second = false;
+				anims[i]->parts[j]->dataA.push_back(pair<float, float>());
+				fscanf_s(file, "HT : %f\n", &(anims[i]->parts[j]->dataA[k].first));
+				fscanf_s(file, "HK : %f\n", &anims[i]->parts[j]->dataA[k].second);
+
+				anims[i]->flagA.push_back(pair<int, Sprite*>(j, new Sprite(fileA, shader, Vector2(110 + anims[i]->parts[j]->dataT[k].first * 400 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 			}
 		}
 	}

@@ -97,8 +97,8 @@ void Sprite::Initialize(wstring textureFile, wstring shaderFile, float startX, f
 	sWorld = shader->AsMatrix("World");
 	sView = shader->AsMatrix("View");
 	sProjection = shader->AsMatrix("Projection");
-
-	isHide = false;
+	sAlpha = shader->AsScalar("Alpha");
+	sAlpha->SetFloat(1.0f);
 
 	UpdateWorld();
 
@@ -156,8 +156,6 @@ void Sprite::Update(Matrix & V, Matrix & P)
 
 void Sprite::Render()
 {
-	if (isHide) return;
-
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
@@ -260,6 +258,11 @@ void Sprite::UpdateWorld()
 	normWorld = D * nS * ID * R * T * origin;
 
 	sWorld->SetMatrix(world);
+}
+
+void Sprite::Alpha(float alpha)
+{
+	sAlpha->SetFloat(alpha);
 }
 
 
