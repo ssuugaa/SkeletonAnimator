@@ -1523,7 +1523,7 @@ void S00_AnimCustom::SaveData(string fileName)
 		fprintf_s(file, "R : %f, %f, %f\n", partDatas[i]->R.x, partDatas[i]->R.y, partDatas[i]->R.z);
 		fprintf_s(file, "T : %f, %f\n", partDatas[i]->T.x, partDatas[i]->T.y);
 
-		fprintf_s(file, "H : %f\n", partDatas[i]->alpha);
+		fprintf_s(file, "A : %f\n", partDatas[i]->alpha);
 		fprintf_s(file, "P : %d\n", partDatas[i]->parent);
 	}
 
@@ -1562,7 +1562,7 @@ void S00_AnimCustom::LoadData(string fileName)
 		fscanf_s(file, "R : %f, %f, %f\n", &partDatas[i]->R.x, &partDatas[i]->R.y, &partDatas[i]->R.z);
 		fscanf_s(file, "T : %f, %f\n", &partDatas[i]->T.x, &partDatas[i]->T.y);
 
-		fscanf_s(file, "H : %f\n", &partDatas[i]->alpha);
+		fscanf_s(file, "A : %f\n", &partDatas[i]->alpha);
 		fscanf_s(file, "P : %d\n", &partDatas[i]->parent);
 		
 		parts.push_back(new Sprite(String::ToWString("Character/" + fileName + "/" + partDatas[i]->name + ".png"), shader));
@@ -1621,11 +1621,11 @@ void S00_AnimCustom::SaveAnim(string fileName)
 				fprintf_s(file, "TK : %f, %f\n", anims[i]->parts[j]->dataT[k].second.x, anims[i]->parts[j]->dataT[k].second.y);
 			}
 			//H
-			fprintf_s(file, "HC : %d\n", anims[i]->parts[j]->dataA.size());
+			fprintf_s(file, "AC : %d\n", anims[i]->parts[j]->dataA.size());
 			for (UINT k = 0; k < anims[i]->parts[j]->dataA.size(); k++)
 			{
-				fprintf_s(file, "HT : %f\n", anims[i]->parts[j]->dataA[k].first);
-				fprintf_s(file, "HK : %f\n", anims[i]->parts[j]->dataA[k].second);
+				fprintf_s(file, "AT : %f\n", anims[i]->parts[j]->dataA[k].first);
+				fprintf_s(file, "AK : %f\n", anims[i]->parts[j]->dataA[k].second);
 			}
 		}
 	}
@@ -1693,13 +1693,13 @@ void S00_AnimCustom::LoadAnim(string fileName)
 				anims[i]->flagT.push_back(pair<int, Sprite*>(j, new Sprite(fileT, shader, Vector2(110 + anims[i]->parts[j]->dataT[k].first * 400 - FixWidth * 0.5f, 300 - 60 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 			}
 			// H
-			fscanf_s(file, "HC : %d\n", &count);
+			fscanf_s(file, "AC : %d\n", &count);
 			int boolConv = 0;
 			for (int k = 0; k < count; k++)
 			{
 				anims[i]->parts[j]->dataA.push_back(pair<float, float>());
-				fscanf_s(file, "HT : %f\n", &(anims[i]->parts[j]->dataA[k].first));
-				fscanf_s(file, "HK : %f\n", &anims[i]->parts[j]->dataA[k].second);
+				fscanf_s(file, "AT : %f\n", &(anims[i]->parts[j]->dataA[k].first));
+				fscanf_s(file, "AK : %f\n", &anims[i]->parts[j]->dataA[k].second);
 
 				anims[i]->flagA.push_back(pair<int, Sprite*>(j, new Sprite(fileA, shader, Vector2(110 + anims[i]->parts[j]->dataT[k].first * 400 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 			}
