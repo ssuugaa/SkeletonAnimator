@@ -7,7 +7,7 @@ const UINT FixHeight = Height;
 
 S00_AnimCustom::S00_AnimCustom(SceneValues * values)
 	: Scene(values)
-	, fileName("HumanKing01")		// ÆíÁý Å¸°Ù!
+	, fileName("HumanPawn01")		// ÆíÁý Å¸°Ù!
 	, file(NULL)
 	, phase(0)
 	, partNum(0)
@@ -1019,7 +1019,10 @@ void S00_AnimCustom::PhaseData()
 		SaveData(fileName);
 	ImGui::SameLine();
 	if (ImGui::Button("Load Data"))
+	{
 		LoadData(fileName);
+		UpdateWorld(partDatas[0], parts[0]);
+	}
 	
 	ImGui::Separator();
 
@@ -1334,12 +1337,13 @@ void S00_AnimCustom::CreateAnim()
 		anims[i]->flagR.push_back(pair<int, Sprite*>(k, new Sprite(fileR, shader, Vector2(110 - FixWidth * 0.5f, 300 - 120 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 		anims[i]->flagT.push_back(pair<int, Sprite*>(k, new Sprite(fileT, shader, Vector2(110 - FixWidth * 0.5f, 300 - 60 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 		anims[i]->flagA.push_back(pair<int, Sprite*>(k, new Sprite(fileA, shader, Vector2(110 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
+		
+		anims[i]->flagS[k].second->Update(fixedView, fixedProj);
+		anims[i]->flagR[k].second->Update(fixedView, fixedProj);
+		anims[i]->flagT[k].second->Update(fixedView, fixedProj);
+		anims[i]->flagA[k].second->Update(fixedView, fixedProj);
 	}
 
-	anims[i]->flagS[0].second->Update(fixedView, fixedProj);
-	anims[i]->flagR[0].second->Update(fixedView, fixedProj);
-	anims[i]->flagT[0].second->Update(fixedView, fixedProj);
-	anims[i]->flagA[0].second->Update(fixedView, fixedProj);
 
 	animSelect = i;
 	anims[i]->timeMax = 1.0f;
@@ -1493,7 +1497,7 @@ void S00_AnimCustom::ChangeParent(int target)
 
 	for (iter; iter != end; iter++)
 	{
-		if(iter - begin == partSelect)
+		if((*iter) == partSelect)
 		{
 			partDatas[dataSelect->parent]->child.erase(iter);
 			break;
@@ -1701,7 +1705,7 @@ void S00_AnimCustom::LoadAnim(string fileName)
 				fscanf_s(file, "AT : %f\n", &(anims[i]->parts[j]->dataA[k].first));
 				fscanf_s(file, "AK : %f\n", &anims[i]->parts[j]->dataA[k].second);
 
-				anims[i]->flagA.push_back(pair<int, Sprite*>(j, new Sprite(fileA, shader, Vector2(110 + anims[i]->parts[j]->dataT[k].first * 400 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
+				anims[i]->flagA.push_back(pair<int, Sprite*>(j, new Sprite(fileA, shader, Vector2(110 + anims[i]->parts[j]->dataA[k].first * 400 - FixWidth * 0.5f, 300 - 150 - FixHeight * 0.5f), Vector2(0.25f, 0.25f))));
 			}
 		}
 	}
